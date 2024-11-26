@@ -1,31 +1,59 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:fractal_zoom/react_embed.dart';
+import 'package:flutter_linux_webview/flutter_linux_webview.dart';
+import 'package:fractal_zoom/web_view_linux.dart';
 import 'package:fractal_zoom/web_view_screen_flutter_react.dart';
+import 'package:shelf/shelf_io.dart';
+import 'package:shelf_static/shelf_static.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
-
-final InAppLocalhostServer localhostServer =
-InAppLocalhostServer(documentRoot: 'assets/react_app');
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (!kIsWeb) {
-    // start the localhost server
-    await localhostServer.start();
-  }
+  if(defaultTargetPlatform != TargetPlatform.linux) {
 
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-    await InAppWebViewController.setWebContentsDebuggingEnabled(kDebugMode);
-  }
+    final InAppLocalhostServer localhostServer =
+    InAppLocalhostServer(documentRoot: 'assets/react_app');
 
+    if (!kIsWeb) {
+      await localhostServer.start();
+    }
+
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      await InAppWebViewController.setWebContentsDebuggingEnabled(kDebugMode);
+    }
+  } else {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Set up a static file server to serve the React build
+    final handler = createStaticHandler(
+      Directory.current.path + '/assets/react_app',
+      defaultDocument: 'index.html',
+    );
+
+    final server = await serve(handler, 'localhost', 8080);
+    print('Server running at http://${server.address.host}:${server.port}');
+
+    // Run `LinuxWebViewPlugin.initialize()` first before creating a WebView.
+    LinuxWebViewPlugin.initialize(options: <String, String?>{
+      'user-agent': 'UA String',
+      'remote-debugging-port': '8888',
+      'autoplay-policy': 'no-user-gesture-required',
+    });
+
+    // Configure [WebView] to use the [LinuxWebView].
+    WebView.platform = LinuxWebView();
+  }
   runApp(const MaterialApp(home: MyApp()));
 }
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -48,13 +76,15 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
 
-  void _incrementCounter() {
-    // setState(() {
-    //   _counter++;
-    // });
-    Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen()));
+  void _startWebView() {
+    bool isLinux = defaultTargetPlatform == TargetPlatform.linux;
+    if(!isLinux) {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen()));
+    } else {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewExample()));
+    }
+    print('Linux is not supported');
   }
 
   @override
@@ -64,25 +94,11 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(
-        // child: Column(
-        //   mainAxisAlignment: MainAxisAlignment.center,
-        //   children: <Widget>[
-        //     const Text(
-        //       'You have pushed the button this many times:',
-        //     ),
-        //     Text(
-        //       '$_counter',
-        //       style: Theme.of(context).textTheme.headlineMedium,
-        //     ),
-        //   ],
-        // ),
-      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: _startWebView,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }

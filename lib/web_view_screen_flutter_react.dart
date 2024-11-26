@@ -1,10 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 
 
 class WebViewScreen extends StatelessWidget {
+  const WebViewScreen({super.key});
+
   // final String fileName;
   // final String fileLink;
 
