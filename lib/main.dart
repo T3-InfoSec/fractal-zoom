@@ -6,11 +6,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_linux_webview/flutter_linux_webview.dart';
 import 'package:fractal_zoom/web_view_linux.dart';
-import 'package:fractal_zoom/web_view_screen_flutter_react.dart';
+import 'package:fractal_zoom/web_view_mobile.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_static/shelf_static.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +31,7 @@ Future main() async {
 
     // Set up a static file server to serve the React build
     final handler = createStaticHandler(
-      Directory.current.path + '/assets/react_app',
+      '${Directory.current.path}/assets/react_app',
       defaultDocument: 'index.html',
     );
 
@@ -80,11 +79,10 @@ class _MyHomePageState extends State<MyHomePage> {
   void _startWebView() {
     bool isLinux = defaultTargetPlatform == TargetPlatform.linux;
     if(!isLinux) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewScreen(real: 56.2, imag: 53.0)));
     } else {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewExample()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewExample(real: 225.25, imag: 651.10)));
     }
-    print('Linux is not supported');
   }
 
   @override

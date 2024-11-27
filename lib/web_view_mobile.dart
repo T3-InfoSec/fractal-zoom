@@ -1,22 +1,25 @@
 import 'dart:async';
-import 'dart:ui';
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:flutter_linux_webview/flutter_linux_webview.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'dart:ui';
 
-class WebViewExample extends StatefulWidget {
+import 'package:flutter/material.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+
+
+
+class WebViewScreen extends StatefulWidget {
   final double real;
   final double imag;
-  const WebViewExample({super.key, required this.real, required this.imag});
+
+  const WebViewScreen({super.key, required this.real, required this.imag});
 
   @override
-  WebViewExampleState createState() => WebViewExampleState();
+  WebViewScreenState createState() => WebViewScreenState();
 }
 
-class WebViewExampleState extends State<WebViewExample> with WidgetsBindingObserver {
+class WebViewScreenState extends State<WebViewScreen> with WidgetsBindingObserver {
   Timer? _messageCheckTimer;
-  WebViewController? _webViewController;
+  InAppWebViewController? _webViewController;
 
   @override
   void initState() {
@@ -25,6 +28,8 @@ class WebViewExampleState extends State<WebViewExample> with WidgetsBindingObser
     // Start polling for messages from web
     _startMessagePolling();
   }
+
+
 
   void _startMessagePolling() {
     // Poll for messages every 500ms
@@ -36,13 +41,14 @@ class WebViewExampleState extends State<WebViewExample> with WidgetsBindingObser
   Future<void> _checkForMessages() async {
     if (_webViewController != null) {
       try {
-        final result = await _webViewController!.runJavascriptReturningResult(
-          'window.getFlutterMessages()',
+        final result = await _webViewController!.evaluateJavascript(
+          source: 'window.getFlutterMessages()',
         );
+        print("Result: $result");
 
         if (result != 'null') {
           // Parse messages from the buffer
-          final messages = jsonDecode(jsonDecode(result)) as List;
+          final messages = jsonDecode(result) as List;
           for (final messageStr in messages) {
             final message = jsonDecode(messageStr);
             _handleWebMessage(message);
@@ -57,18 +63,18 @@ class WebViewExampleState extends State<WebViewExample> with WidgetsBindingObser
   void _handleWebMessage(dynamic message) {
     print("Message from web: $message");
     // Show message in UI
-    if (mounted) {
+    // if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Received: $message")),
       );
-    }
+    // }
   }
 
   Future<void> sendMessageToWeb(dynamic message) async {
     if (_webViewController != null) {
       final messageJson = jsonEncode(message);
-      await _webViewController!.runJavascript(
-        "window.receiveFromFlutter('$messageJson')",
+      await _webViewController!.evaluateJavascript(
+        source: "window.receiveFromFlutter('$messageJson')",
       );
     }
   }
@@ -82,28 +88,31 @@ class WebViewExampleState extends State<WebViewExample> with WidgetsBindingObser
 
   @override
   Future<AppExitResponse> didRequestAppExit() async {
-    await LinuxWebViewPlugin.terminate();
     return AppExitResponse.exit;
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('flutter_linux_webview example'),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: WebView(
-              initialUrl: 'http://localhost:8080/index.html',
-              onWebViewCreated: (WebViewController webViewController) {
-                _webViewController = webViewController;
-              },
-              javascriptMode: JavascriptMode.unrestricted,
-            ),
+    return Container(
+      height: MediaQuery.of(context).size.height,
+      color: Colors.teal,
+      child: SafeArea(
+        child: InAppWebView(
+          initialSettings: InAppWebViewSettings(
+            useOnDownloadStart: true,
+            javaScriptCanOpenWindowsAutomatically: true,
+            javaScriptEnabled: true,
+            useShouldOverrideUrlLoading: true,
           ),
-        ],
+          initialUrlRequest:
+          URLRequest(url: WebUri("http://localhost:8080/index.html")),
+          onWebViewCreated: (InAppWebViewController controller) {
+            _webViewController = controller;
+          },
+          onConsoleMessage: (controller, message) {},
+          onDownloadStartRequest: (controller, string) {},
+        ),
       ),
     );
   }
