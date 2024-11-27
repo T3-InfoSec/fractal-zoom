@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import './Controls.css'
 import {
     Button,
@@ -27,13 +27,30 @@ interface ILocalProps {
 
 const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, setMaxIterations, setColorScheme, colorScheme, zoom, setZoom}) => {
 
-    const [zoomFactor, setZoomFactor] = React.useState<number>(30);
+    const [zoomFactor, setZoomFactor] = React.useState<number>(2);
+    const [exponent, setExponent] = React.useState({real: 1, imaginary: 0});
+
+    useEffect(() => {
+        window.addEventListener('flutterMessage', (event: any) => {
+            const message = event.detail;
+            console.log('Received message from Flutter:', message);
+            if (message.type === 'position') {
+                setExponent(message.payload);
+            }
+        });
+
+        return () => {
+            window.removeEventListener('flutterMessage', () => {});
+        }
+    },[]);
+
 
     const handleResetOn = () => {
         console.log("Resetting");
         setReset(true);
         setColorScheme(1);
         setMaxIterations(100);
+        setZoom(2.0);
     };
 
     const handleResetOff = () => {
@@ -69,6 +86,9 @@ const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, set
         }
     }
 
+    const submitSelected = () => {
+        window.sendToFlutter(JSON.stringify({type: 'position', payload: position}));
+    }
     const handleSelectChange = (e: SelectChangeEvent) => {
         setColorScheme(parseInt(e.target.value));
     }
@@ -84,6 +104,8 @@ const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, set
             <Typography>Use A+mouse button to zoom out</Typography>
             <p>Real part: {position.x}</p>
             <p>Imaginary Part: {position.y}</p>
+            <p>Exponent Real: {exponent.real}</p>
+            <p>Exponent Imag: {exponent.imaginary}</p>
             <TextField sx={{margin: '10px'}} id="iterations-text" label="Max Iterations" variant="outlined"
                        value={maxIterations} onChange={handleChange}/>
             <FormControl sx={{margin: '10px'}}>
@@ -112,26 +134,12 @@ const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, set
                 step={10}
                 marks
                 min={10}
-                max={100}
+                max={90}
             />
 
             <Button onClick={()=>{handleZoom(true)}}>Zoom In</Button>
             <Button onClick={()=>{handleZoom(false)}}>Zoom Out</Button>
-            {/*<FormControl  sx={{margin: '10px'}}>*/}
-            {/*    <InputLabel id="fractal">Fractal</InputLabel>*/}
-            {/*    <Select*/}
-            {/*        labelId="fractal-select-label"*/}
-            {/*        id="fractal-select"*/}
-            {/*        value={fractal}*/}
-            {/*        label="Fractal Select"*/}
-            {/*        onChange={handleFractalChange}*/}
-            {/*    >*/}
-            {/*        {['Mandelbrot', 'BurningShip'].map((value) => (*/}
-            {/*            <MenuItem value={value.toLowerCase()} key={value}>{value}</MenuItem>*/}
-            {/*        ))}*/}
-
-            {/*    </Select>*/}
-            {/*</FormControl>*/}
+            <Button onClick={submitSelected}>Submit</Button>
 
         </div>
     );
