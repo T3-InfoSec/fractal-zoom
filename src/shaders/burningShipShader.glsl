@@ -246,8 +246,15 @@ void main() {
 //        color = vec3(1.0, vec2(0.0));
 //    }
 
-    if(z.x<u_selectedPosition.x +  0.000005 && z.x>u_selectedPosition.x -  0.000005  && z.y<u_selectedPosition.y  + u_gridSize*0.5 && z.y>u_selectedPosition.y - 0.000005) {
+    if((((z.x<u_selectedPosition.x + u_gridSize*0.5 && z.x>u_selectedPosition.x + u_gridSize*0.5 - u_gridSize*.05)
+    || (z.x>u_selectedPosition.x - u_gridSize*0.5 && z.x<u_selectedPosition.x - u_gridSize*0.5 + u_gridSize*.05))
+    && z.y<u_selectedPosition.y + u_gridSize*0.5 && z.y>u_selectedPosition.y - u_gridSize*0.5)
+    || ((z.y<u_selectedPosition.y + u_gridSize*0.5 && z.y>u_selectedPosition.y + u_gridSize*0.5 - u_gridSize*.05)
+    || (z.y>u_selectedPosition.y - u_gridSize*0.5 && z.y<u_selectedPosition.y - u_gridSize*0.5 + u_gridSize*.05))
+    && z.x<u_selectedPosition.x + u_gridSize*0.5 && z.x>u_selectedPosition.x - u_gridSize*0.5) {
         color = vec3(0.0, 1.0, 0.0); // this helps in highlighting the selected point
+        gl_FragColor = vec4(color, 1.0);
+        return;
     }
 
     if(u_zoomSize < 0.0001) {
@@ -256,10 +263,5 @@ void main() {
 
         color = mix(gridColor, color, gridLines);
     }
-
-
-
-
-
     gl_FragColor = vec4(color, 1.0);
 }
