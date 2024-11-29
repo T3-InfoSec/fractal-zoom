@@ -23,9 +23,10 @@ interface ILocalProps {
     fractal: string;
     zoom: number;
     setZoom: (zoom: number) => void;
+    setSave: (save: boolean) => void;
 }
 
-const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, setMaxIterations, setColorScheme, colorScheme, zoom, setZoom}) => {
+const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, setMaxIterations, setColorScheme, colorScheme, zoom, setZoom, setSave}) => {
 
     const [zoomFactor, setZoomFactor] = React.useState<number>(2);
     const [exponent, setExponent] = React.useState({real: 1, imaginary: 0});
@@ -93,12 +94,21 @@ const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, set
         setColorScheme(parseInt(e.target.value));
     }
 
+    const handleSaveOn = () => {
+        setSave(true);
+
+    }
+
+    const handleSaveOff = () => {
+        setSave(false);
+    }
+
     // const handleFractalChange = (e: SelectChangeEvent) => {
     //     setFractal(e.target.value);
     // }
 
     return (
-        <div id={'controls-container'} >
+        <div id={'controls-container'}>
             <button onMouseDown={handleResetOn} onMouseUp={handleResetOff}>Reset</button>
             <Typography>Use Q+mouse button to zoom in</Typography>
             <Typography>Use A+mouse button to zoom out</Typography>
@@ -137,9 +147,14 @@ const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, set
                 max={90}
             />
 
-            <Button onClick={()=>{handleZoom(true)}}>Zoom In</Button>
-            <Button onClick={()=>{handleZoom(false)}}>Zoom Out</Button>
+            <Button onClick={() => {
+                handleZoom(true)
+            }}>Zoom In</Button>
+            <Button onClick={() => {
+                handleZoom(false)
+            }}>Zoom Out</Button>
             <Button onClick={submitSelected}>Submit</Button>
+            <button onMouseDown={handleSaveOn} onMouseUp={handleSaveOff}>Save</button>
 
         </div>
     );

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react'
-import { useFrame, ThreeEvent } from '@react-three/fiber';
+import { useFrame, ThreeEvent, useThree } from '@react-three/fiber';
 import { Vector2 } from "three";
 import * as THREE from 'three';
 import burningShipShader from '../../shaders/burningShipShader.glsl';
@@ -13,6 +13,7 @@ interface ILocalProps {
   colorScheme: number;
   fractal: string;
   zoom: number;
+  save: boolean;
 }
 type Props = ILocalProps;
 
@@ -24,6 +25,7 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
 
   // useState
   const [, hover] = useState(false);
+  const { gl: renderer, camera, scene, size } = useThree();
   // const [shader, setShader] = useState(mandelbrotShader);
   const meshRef = useRef<THREE.Mesh>(null!);
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
@@ -56,15 +58,41 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
     }), []
   );
 
+  const getMatrix = () => {
+    renderer.render(scene, camera);
+
+    // Get WebGL context
+    const gl = renderer.getContext();
+
+    // Set up the buffer to store pixel data (RGBA, 4 bytes per pixel)
+    const width = size.width; // Canvas width
+    const height = size.height; // Canvas height
+    const pixels = new Uint8Array(width * height * 4); // RGBA format
+
+    // Read the pixel data from the current framebuffer
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+    console.log('Pixel Data:', pixels);
+    return pixels;
+  }
   useEffect(() => {
-    console.log(props.colorScheme)
     materialRef.current.uniforms.u_maxIterations.value = props.maxIterations;
     materialRef.current.uniforms.u_color_scheme.value = props.colorScheme-1;
     // materialRef.current.fragmentShader = props.fractal === "burningShip" ? burningShipShader : mandelbrotShader;
-    console.log(props.maxIterations)
     // console.log(props.fractal)
     // console.log(shader)
   }, [props.maxIterations, props.colorScheme]);
+
+  useEffect(() => {
+    if(props.save)
+    getMatrix();
+    // const dataURL = renderer.domElement.toDataURL('image/png');
+    // const link = document.createElement('a');
+    // link.href = dataURL;
+    // link.download = 'threejs-render.png';
+    // link.click();
+    // document.removeChild(link);
+  }, [props.save]);
 
   // useCallback
   const updateScreenSize = useCallback(() => {
@@ -121,6 +149,8 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
 
   }, [props.reset]);
 
+
+
   useEffect(() => {
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
@@ -135,6 +165,7 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
       );
 
       const zoomFactor = event.deltaY > 0 ? 1.1 : 0.9;
+      if(materialRef.current.uniforms.u_zoomSize.value * zoomFactor > 0.000045)
       materialRef.current.uniforms.u_zoomSize.value *= zoomFactor;
 
       const centerFractalAfterZoom = new THREE.Vector2(
@@ -147,6 +178,8 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
+    const matrix = getMatrix();
+    window.sendToFlutter({type: 'matrix', payload: matrix});
     return () => {
       window.removeEventListener("wheel", handleWheel);
     };
@@ -217,14 +250,12 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
   };
 
   const handleClick = () => {
-    console.log("click");
     const zoom = materialRef.current.uniforms.u_zoomSize.value as number;
     const offset = materialRef.current.uniforms.u_offset.value as Vector2;
     const coordinates = [];
     let mouseX = mousePosition.current.x / window.innerWidth;
     let mouseY = 1 - mousePosition.current.y / window.innerHeight;
     if(touchPosition.current.x !== 0 || touchPosition.current.y !== 0) {
-      console.log('touch');
       console.log(touchPosition.current.x);
         console.log(touchPosition.current.y);
       console.log(mousePosition.current.x);
@@ -241,7 +272,6 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
     coordinates[1] = parseFloat(coordinates[1].toFixed(6));
     props.updatePosition({x: coordinates[0], y: coordinates[1]});
     materialRef.current.uniforms.u_selectedPosition.value = new Vector2(coordinates[0], coordinates[1]);
-    console.log(coordinates);
   }
 
   const handlePointerUp = (e: ThreeEvent<PointerEvent>) => {
@@ -278,7 +308,6 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
       materialRef.current.uniforms.u_zoomSize.value = zoom;
       materialRef.current.uniforms.u_offset.value = offset;
       // vec2 z = u_zoomSize * vec2(u_aspectRatio, 1.0) * gl_FragCoord.xy / u_resolution + u_offset;
-      console.log(zoom);
     }
 
     if (mouseDown0.current) {
