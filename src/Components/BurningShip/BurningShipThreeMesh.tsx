@@ -84,8 +84,10 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
   }, [props.maxIterations, props.colorScheme]);
 
   useEffect(() => {
-    if(props.save)
-    getMatrix();
+    if(props.save) {
+       const matrix = getMatrix();
+         window.sendToFlutter({type: 'matrix', payload: matrix});
+    }
     // const dataURL = renderer.domElement.toDataURL('image/png');
     // const link = document.createElement('a');
     // link.href = dataURL;
