@@ -9,6 +9,7 @@ function App() {
     const [colorScheme, setColorScheme] = useState(1);
     const [fractal, setFractal] = useState('mandelbrot');
     const [zoom, setZoom] = useState(2.0);
+    const [save, setSave] = useState(false);
     const updatePosition = (position: {x: number, y: number}) => {
         setPosition(position);
     }
@@ -16,7 +17,7 @@ function App() {
     useEffect(() => {
         window._flutterMessages = [];
 
-        window.sendToFlutter = function(message: string) {
+        window.sendToFlutter = function(message: any) {
             window._flutterMessages.push(JSON.stringify(message));
             console.log('Message added to buffer:', message);
         };
@@ -43,6 +44,7 @@ function App() {
                      maxIterations={maxIterations}
                      fractal={fractal}
                      zoom={zoom}
+                     save={save}
                      colorScheme={colorScheme}/>
         <Controls position={position}
                   setReset={setReset}
@@ -50,6 +52,7 @@ function App() {
                   setFractal={setFractal}
                   fractal={fractal}
                   zoom={zoom}
+                  setSave={setSave}
                   setZoom={setZoom}
                   maxIterations={maxIterations}
                   colorScheme={colorScheme}
