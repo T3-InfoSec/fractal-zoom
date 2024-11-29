@@ -40,13 +40,15 @@ class WebViewExampleState extends State<WebViewExample> with WidgetsBindingObser
           'window.getFlutterMessages()',
         );
 
-        if (result != 'null') {
+        if (result != 'null' && result != '"[]"') {
+          print('got message');
           // Parse messages from the buffer
-          final messages = jsonDecode(jsonDecode(result)) as List;
-          for (final messageStr in messages) {
-            final message = jsonDecode(messageStr);
-            _handleWebMessage(message);
-          }
+          // final messages = jsonDecode(jsonDecode(result)) as List;
+          // // print('here');
+          // for (final messageStr in messages) {
+          //   final message = jsonDecode(messageStr);
+          //   _handleWebMessage(message);
+          // }
         }
       } catch (e) {
         print('Error checking messages: $e');
@@ -55,13 +57,14 @@ class WebViewExampleState extends State<WebViewExample> with WidgetsBindingObser
   }
 
   void _handleWebMessage(dynamic message) {
-    print("Message from web: $message");
+    print("Message from web:");
+    // print("Message from web: $message");
     // Show message in UI
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Received: $message")),
-      );
-    }
+    // if (mounted) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text("Received: $message")),
+    //   );
+    // }
   }
 
   Future<void> sendMessageToWeb(dynamic message) async {
