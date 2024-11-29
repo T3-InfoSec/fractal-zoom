@@ -45,6 +45,22 @@ const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, set
         }
     },[]);
 
+    const [zoomFactor, setZoomFactor] = React.useState<number>(2);
+    const [exponent, setExponent] = React.useState({real: 1, imaginary: 0});
+
+    useEffect(() => {
+        window.addEventListener('flutterMessage', (event: any) => {
+            const message = event.detail;
+            console.log('Received message from Flutter:', message);
+            if (message.type === 'position') {
+                setExponent(message.payload);
+            }
+        });
+
+        return () => {
+            window.removeEventListener('flutterMessage', () => {});
+        }
+    },[]);
 
     const handleResetOn = () => {
         console.log("Resetting");
@@ -155,6 +171,9 @@ const Controls: React.FC<ILocalProps> = ({position, setReset, maxIterations, set
             }}>Zoom Out</Button>
             <Button onClick={submitSelected}>Submit</Button>
             <button onMouseDown={handleSaveOn} onMouseUp={handleSaveOff}>Save</button>
+            <Button onClick={()=>{handleZoom(true)}}>Zoom In</Button>
+            <Button onClick={()=>{handleZoom(false)}}>Zoom Out</Button>
+            <Button onClick={submitSelected}>Submit</Button>
 
         </div>
     );
