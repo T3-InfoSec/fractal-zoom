@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fractal_zoom/burningShipFractal.dart';
-
-import 'burningShipAdv.dart';
-import 'config/assets.dart';
-import 'general_shader_page.dart';
+import 'burning_ship_adv.dart';
 
 void main() {
   runApp(const MyApp());

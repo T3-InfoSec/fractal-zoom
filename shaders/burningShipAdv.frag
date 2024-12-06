@@ -6,14 +6,28 @@ uniform vec2 u_resolution;
 uniform vec2 u_offset;
 uniform float u_zoomSize;
 uniform float u_maxIterations;
-uniform float u_color_scheme;
+uniform float u_gridSize;
+uniform vec2 u_selectedPosition;
 
 
-vec4 basic_colormap(float s, vec3 shade) {
-    vec3 coord = vec3(s, s, s);
+// === COMPLEX NUMBER OPERATIONS ===
+// =================================
 
-    return vec4(pow(coord, shade), 1.0);
+vec2 complexPower(vec2 z, vec2 p) {
+    float r = length(z);
+    float theta = atan(z.y, z.x);
+    if(r == 0.0) return vec2(0.0);
+    float lnr = log(r);
+
+    float newR = exp(p.x * lnr - p.y * theta);
+    float newTheta = p.y * lnr + p.x * theta;
+
+    return vec2(
+    newR * cos(newTheta),
+    newR * sin(newTheta)
+    );
 }
+
 
 // Burning ship computation
 float burningShip(vec2 point) {
@@ -24,9 +38,9 @@ float burningShip(vec2 point) {
         if (i >= u_maxIterations) break;
 
         z = vec2(abs(z.x), abs(z.y)); // Apply burning ship absolute value
-        z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + point; // Mandelbrot formula
+        z = complexPower(z, vec2(2.0,0.0)) + point; // Burning ship formula
 
-        if (dot(z, z) > 4.0) {
+        if (dot(z, z) > max(1000.0*u_zoomSize, 1000)) {
             alpha = i / u_maxIterations;
             break;
         }
@@ -35,13 +49,32 @@ float burningShip(vec2 point) {
 }
 
 void main() {
-    vec2 z = (gl_FragCoord.xy / u_resolution - 0.5) * u_zoomSize + u_offset;
+    float u_aspectRatio = u_resolution.x / u_resolution.y;
+    vec2 z = u_zoomSize * vec2(u_aspectRatio, 1.0) * gl_FragCoord.xy / u_resolution + u_offset;
     float alpha = burningShip(z);
 
     // Color scheme
     vec3 color = vec3(1.0 - alpha);
     vec3 shade = vec3(5.38, 6.15, 3.85);
-    color = basic_colormap(1-alpha, shade).xyz;
+    color = pow(color, shade);
+
+    float halfGrid = u_gridSize * 0.5;
+    float border = u_gridSize * 0.05; // Border range for highlighting
+
+    bool withinXRange = abs(z.x - u_selectedPosition.x) <= halfGrid + border;
+    bool withinYRange = abs(z.y - u_selectedPosition.y) <= halfGrid + border;
+
+    if(z.x < 0.01 && z.x > -0.01 && z.y < 0.01 && z.y > -0.01) {
+        color = vec3(0.0, 1.0, 0.0); // Highlight color
+        fragColor = vec4(color, 1.0);
+        return;
+    }
+
+    if (withinXRange && withinYRange) {
+        color = vec3(0.0, 1.0, 0.0); // Highlight color
+        fragColor = vec4(color, 1.0);
+        return;
+    }
 
     fragColor = vec4(color, 1.0);
 }
