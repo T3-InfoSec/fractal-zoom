@@ -169,48 +169,54 @@ vec4 custom_colormap_3(float s) {
 // ============
 // === MAIN ===
 // ============
+// =================================
+// === COMPLEX NUMBER OPERATIONS ===
+// =================================
 
-float burningShip(vec2 point){
+vec2 complexPower(vec2 z, vec2 p) {
+    // Convert z to polar coordinates
+    float r = length(z);
+    float theta = atan(z.y, z.x);
+    if(r == 0.0) return vec2(0.0);
+    // Take the natural log and multiply
+    float lnr = log(r);
+
+    float newR = exp(p.x * lnr - p.y * theta);
+    float newTheta = p.y * lnr + p.x * theta;
+
+//    // Convert back to rectangular coordinates with safety checks
+//    float maxValue = 1e6;
+//    if (newR > maxValue) newR = maxValue;
+
+    return vec2(
+    newR * cos(newTheta),
+    newR * sin(newTheta)
+    );
+}
+
+float burningShip(vec2 point) {
+    point = vec2(point.x, -point.y);
+    vec2 z = vec2(0.0);
     float alpha = 1.0;
-    vec2 z = vec2(0.0, 0.0);
-    vec2 z_0;
-    vec2 z_1;
 
-    for (float i=0.0; i < u_maxIterations; i+=1.0){
-        z_1 = z_0;
-        z_0 = z;
-        z_0.x = abs(z_0.x);
-        z_0.y = -1.0* abs(z_0.y);
+    for (float i = 0.0; i < u_maxIterations; i += 1.0) {
+        if (i >= u_maxIterations) break;
 
-        // ===============================
-        // =========== CACHING ===========
-        // ===============================
-        float x_0_sq = z_0.x*z_0.x;
-        float y_0_sq = z_0.y*z_0.y;
-        vec2 z_0_sq = vec2(x_0_sq - y_0_sq, 2.0*z_0.x*z_0.y);
-        vec2 z_0_conj = conj(z_0);
+        z = vec2(abs(z.x), abs(z.y)); // Apply burning ship absolute value
 
-        float x_1_sq = z_1.x*z_1.x;
-        float y_1_sq = z_1.y*z_1.y;
-        vec2 z_1_sq = vec2(x_1_sq - y_1_sq, 2.0*z_1.x*z_1.y);
-        vec2 z_1_conj = conj(z_1);
+//        // Add safety check before complex power
+//        if (length(z) > 1e10) {
+//            alpha = i / u_maxIterations;
+//            break;
+//        }
 
-        // ===============================
-        // ===== RECURRENCE RELATION =====
-        // ===============================
-        z = z_0_sq + point;
+        z = complexPower(z, vec2(2.0, 2.3)) + point;
 
-        float z_0_mag = x_0_sq + y_0_sq;
-        float z_1_mag = x_1_sq + y_1_sq;
-
-        if(z_0_mag > 15.0){
-            float frac = (12.0 - z_1_mag) / (z_0_mag - z_1_mag);
-            alpha = (float(i) - 1.0 + frac)/u_maxIterations; // should be same as max iterations
+        if (dot(z, z) > 1000.0*u_zoomSize) {
+            alpha = i / u_maxIterations;
             break;
         }
     }
-
-    // in interval [0, 1]
     return alpha;
 }
 float grid(vec2 uv, float gridSize) {
@@ -257,11 +263,11 @@ void main() {
         return;
     }
 
-    if(u_zoomSize < 0.0001) {
-        float gridLines = grid(z, 0.1* 0.0001);
-        vec3 gridColor = vec3(1.0);
-
-        color = mix(gridColor, color, gridLines);
+    if(u_zoomSize <= 0.0001) {
+//        float gridLines = grid(z, 0.1* 0.0001);
+//        vec3 gridColor = vec3(1.0);
+//
+//        color = mix(gridColor, color, gridLines);
     }
     gl_FragColor = vec4(color, 1.0);
 }
