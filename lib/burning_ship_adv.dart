@@ -13,10 +13,10 @@ class BurningShipFractalAdv extends StatefulWidget {
 
 class _BurningShipFractalAdvState extends State<BurningShipFractalAdv> {
   FragmentShader? _shader; // Nullable until initialized
-  double _zoom = 2.0; // todo: zoom
-  Offset _offset = const Offset(0, 0);
-  Offset _mousePosition = const Offset(0, 0);
-  Offset _selectedPosition = const Offset(0.0, 0.0); // todo: selected position
+  double _zoom = 2.00000000;
+  Offset _offset = const Offset(0.00000000, 0.00000000);
+  Offset _selectedPosition =
+      const Offset(0.00000000, 0.00000000);
   final double _gridSize = 0.00001;
 
   final int _maxIterations = 100; // todo: max iterations
@@ -27,6 +27,7 @@ class _BurningShipFractalAdvState extends State<BurningShipFractalAdv> {
       _loadShader();
     });
     super.initState();
+    _offset = _offset - const Offset(1.0,1.0);
   }
 
   void _loadShader() async {
@@ -50,18 +51,18 @@ class _BurningShipFractalAdvState extends State<BurningShipFractalAdv> {
                 child: CircularProgressIndicator()) // Show a loading indicator
             : Listener(
                 onPointerSignal: (PointerSignalEvent event) {
+                  // this just changes the zoom, do not change offset here
                   if (event is PointerScrollEvent) {
                     setState(() {
                       // Adjust zoom level based on scroll delta
-                      var zoomFactor = event.scrollDelta.dy  > 0 ? 1.1 : 0.9;
-                      var zoomDelta = zoomFactor  * zoomFactor * (event.scrollDelta.dy > 0 ? 1: -1);
+                      var zoomFactor = event.scrollDelta.dy > 0 ? 1.1 : 0.9;
+
+                      var zoomDelta = zoomFactor *
+                          zoomFactor *
+                          (event.scrollDelta.dy > 0 ? 1 : -1);
                       _zoom *= zoomFactor;
                       print("position ${event.position}");
-                      var mouseX = event.position.dx/ MediaQuery.of(context).size.width;
-                      var mouseY = event.position.dy / MediaQuery.of(context).size.height;
-                      var aspectRatio = MediaQuery.of(context).size.width / MediaQuery.of(context).size.height;
-                      // _offset = _offset - Offset(-mouseX * zoomDelta *aspectRatio, -mouseY * zoomDelta);
-                      // print(_offset);
+
                       print(_zoom);
                     });
                   }
@@ -69,32 +70,37 @@ class _BurningShipFractalAdvState extends State<BurningShipFractalAdv> {
                 child: GestureDetector(
                   onTapDown: (details) {
                     setState(() {
-                      _selectedPosition = details.localPosition;
-                      var aspectRatio = MediaQuery.of(context).size.width / MediaQuery.of(context).size.height;
-                      var mouseX = details.localPosition.dx/ MediaQuery.of(context).size.width;
-                      var mouseY = details.localPosition.dy/ MediaQuery.of(context).size.height;
-                      var pos =  Offset(_zoom * aspectRatio * mouseX + 0.5 * _gridSize,
-                          _zoom * mouseY + 0.5 * _gridSize);
-                      print(pos);
-                      print(_selectedPosition);
+                      var aspectRatio = MediaQuery.of(context).size.width /
+                          MediaQuery.of(context).size.height;
+                      var mouseX = details.localPosition.dx /
+                          MediaQuery.of(context).size.width;
+                      var mouseY = details.localPosition.dy /
+                          MediaQuery.of(context).size.height;
+                      var posX  = mouseX * _zoom * aspectRatio + _offset.dx+ 0.5* _gridSize;
+                      var posY = mouseY * _zoom + _offset.dy + 0.5* _gridSize;
+                      posX = double.parse(posX.toStringAsFixed(5)) - 0.5* _gridSize;
+                      posY = double.parse(posY.toStringAsFixed(5)) - 0.5* _gridSize;
+                      posX = double.parse(posX.toStringAsFixed(6));
+                      posY = double.parse(posY.toStringAsFixed(6));
+                      _selectedPosition = Offset(posX, posY);
+                      print('${_selectedPosition.dx}, ${_selectedPosition.dy}');
                     });
                   },
                   onScaleUpdate: (details) {
                     setState(() {
-                      // var zoomFactor = event.scrollDelta.dy  > 0 ? 1.1 : 0.9;
-                      // var zoomDelta = zoomFactor  * zoomFactor * (event.scrollDelta.dy > 0 ? 1: -1);
-                      // _zoom *= zoomFactor;
-                      _zoom *= (1/details.scale.clamp(0.99, 1.01));
+                      // this changes the zoom and offset
 
-                      if(details.scale != 1.0) {
-                        // var zoomFactor = details.scale  > 1.0 ? 1.1 : 0.9;
+                      if (details.scale != 1.0) {
+                        var zoomFactor = details.scale < 1.0 ? 1.01 : 0.99;
                         //
-                        // _zoom *= zoomFactor * details.scale;
-                        print("scale ${details.scale.clamp(0.99, 1.01)}");
+                        _zoom *= zoomFactor * details.scale;
+                        print("scale ${details.scale.clamp(0.9999, 1.0001)}");
+                        print("zoom $_zoom");
                       }
-                      // print(_zoom);
-                        _offset -= details.focalPointDelta * _zoom/ 1000.0;
-                      // print('${(details.focalPointDelta / (_zoom * 100.0)).dx}, ${(details.focalPointDelta / (_zoom * 100.0)).dy}');
+                      // handle pan
+
+                      _offset =
+                          _offset - details.focalPointDelta * _zoom * 0.001;
                     });
                   },
                   child: CustomPaint(
@@ -141,7 +147,6 @@ class _BurningShipAdvFractalPainter extends CustomPainter {
     shader.setFloat(6, gridSize);
     shader.setFloat(7, selectedPosition.dx);
     shader.setFloat(8, selectedPosition.dy);
-    // shader.setFloat(6, 0.0);
 
     final paint = Paint()..shader = shader;
 

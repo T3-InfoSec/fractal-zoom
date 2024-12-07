@@ -48,6 +48,11 @@ float burningShip(vec2 point) {
     return alpha;
 }
 
+float grid(vec2 uv, float gridSize) {
+    vec2 gridLines = fract(uv / gridSize);
+    return step(500.0*u_zoomSize, gridLines.x) * step(500.0*u_zoomSize, gridLines.y);
+}
+
 void main() {
     float u_aspectRatio = u_resolution.x / u_resolution.y;
     vec2 z = u_zoomSize * vec2(u_aspectRatio, 1.0) * gl_FragCoord.xy / u_resolution + u_offset;
@@ -57,23 +62,31 @@ void main() {
     vec3 color = vec3(1.0 - alpha);
     vec3 shade = vec3(5.38, 6.15, 3.85);
     color = pow(color, shade);
+//
+//    if(z.x < 0.01 && z.x > -0.01 && z.y < 0.01 && z.y > -0.01) {
+//        color = vec3(0.0, 1.0, 0.0); // Highlight color
+//        fragColor = vec4(color, 1.0);
+//        return;
+//    }
 
-    float halfGrid = u_gridSize * 0.5;
-    float border = u_gridSize * 0.05; // Border range for highlighting
-
-    bool withinXRange = abs(z.x - u_selectedPosition.x) <= halfGrid + border;
-    bool withinYRange = abs(z.y - u_selectedPosition.y) <= halfGrid + border;
-
-    if(z.x < 0.01 && z.x > -0.01 && z.y < 0.01 && z.y > -0.01) {
-        color = vec3(0.0, 1.0, 0.0); // Highlight color
+    if((((z.x<u_selectedPosition.x + u_gridSize*0.5 && z.x>u_selectedPosition.x + u_gridSize*0.5 - u_gridSize*.05)
+    || (z.x>u_selectedPosition.x - u_gridSize*0.5 && z.x<u_selectedPosition.x - u_gridSize*0.5 + u_gridSize*.05))
+    && z.y<u_selectedPosition.y + u_gridSize*0.5 && z.y>u_selectedPosition.y - u_gridSize*0.5)
+    || ((z.y<u_selectedPosition.y + u_gridSize*0.5 && z.y>u_selectedPosition.y + u_gridSize*0.5 - u_gridSize*.05)
+    || (z.y>u_selectedPosition.y - u_gridSize*0.5 && z.y<u_selectedPosition.y - u_gridSize*0.5 + u_gridSize*.05))
+    && z.x<u_selectedPosition.x + u_gridSize*0.5 && z.x>u_selectedPosition.x - u_gridSize*0.5) {
+        color = vec3(0.0, 1.0, 0.0); // this helps in highlighting the selected point
         fragColor = vec4(color, 1.0);
         return;
     }
 
-    if (withinXRange && withinYRange) {
-        color = vec3(0.0, 1.0, 0.0); // Highlight color
-        fragColor = vec4(color, 1.0);
-        return;
+    // Grid
+
+    if(u_zoomSize <= 0.0001) {
+        float gridLines = grid(z, 0.1* 0.0001);
+        vec3 gridColor = vec3(1.0);
+
+        color = mix(gridColor, color, gridLines);
     }
 
     fragColor = vec4(color, 1.0);
