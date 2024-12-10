@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react'
-import { useFrame, ThreeEvent, useThree } from '@react-three/fiber';
+import { useFrame, ThreeEvent } from '@react-three/fiber';
 import { Vector2 } from "three";
 import * as THREE from 'three';
 import burningShipShader from '../../shaders/burningShipShader.glsl';
@@ -25,7 +25,6 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
 
   // useState
   const [, hover] = useState(false);
-  const { gl: renderer, camera, scene, size } = useThree();
   // const [shader, setShader] = useState(mandelbrotShader);
   const meshRef = useRef<THREE.Mesh>(null!);
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
@@ -58,23 +57,38 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
     }), []
   );
 
-  const getMatrix = () => {
-    renderer.render(scene, camera);
-
-    // Get WebGL context
-    const gl = renderer.getContext();
-
-    // Set up the buffer to store pixel data (RGBA, 4 bytes per pixel)
-    const width = size.width; // Canvas width
-    const height = size.height; // Canvas height
-    const pixels = new Uint8Array(width * height * 4); // RGBA format
-
-    // Read the pixel data from the current framebuffer
-    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-
-    console.log('Pixel Data:', pixels);
-    return pixels;
-  }
+  // const getMatrix = (factor = 1) => {
+    // let currWindowSize = getWindowSize();
+    // const originalSize = gl.getSize(new THREE.Vector2());
+    // const originalPixelRatio = gl.getPixelRatio();
+    // console.log(originalSize);
+    // console.log(originalPixelRatio);
+    // currWindowSize = new Vector2(currWindowSize.x*factor, currWindowSize.y*factor);
+    // let currZoom = materialRef.current.uniforms.u_zoomSize.value as number;
+    // console.log(currWindowSize);
+    // materialRef.current.uniforms.u_resolution.value = currWindowSize;
+    // // materialRef.current.uniforms.u_zoomSize.value = currZoom*factor;
+    // const currOffset = materialRef.current.uniforms.u_offset.value as Vector2;
+    // // materialRef.current.uniforms.u_offset.value = new Vector2(-1.8477380426784349,-0.05199999999999916);
+    // gl.setPixelRatio(factor);
+    // gl.render(scene, camera);
+    //
+    // // Get the canvas DOM element
+    // const canvas = gl.domElement;
+    //
+    // // Convert canvas to Base64 PNG
+    // const dataURL = canvas.toDataURL('image/png');
+    //
+    // // Extract Base64 string (optional)
+    // const base64Image = dataURL.replace(/^data:image\/png;base64,/, '');
+    //
+    // // console.log('Base64 PNG:', base64Image);
+    // // materialRef.current.uniforms.u_resolution.value = getWindowSize();
+    // // materialRef.current.uniforms.u_offset.value = currOffset;
+    // // materialRef.current.uniforms.u_zoomSize.value = currZoom;
+    // // gl.setPixelRatio(originalPixelRatio);
+    // return base64Image;
+  // }
   useEffect(() => {
     materialRef.current.uniforms.u_maxIterations.value = props.maxIterations;
     materialRef.current.uniforms.u_color_scheme.value = props.colorScheme-1;
@@ -84,10 +98,10 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
   }, [props.maxIterations, props.colorScheme]);
 
   useEffect(() => {
-    if(props.save) {
-       const matrix = getMatrix();
-         window.sendToFlutter({type: 'matrix', payload: matrix});
-    }
+    // if(props.save) {
+    //    const matrix = getMatrix();
+    //      window.sendToFlutter({type: 'matrix', payload: matrix});
+    // }
     // const dataURL = renderer.domElement.toDataURL('image/png');
     // const link = document.createElement('a');
     // link.href = dataURL;
@@ -180,11 +194,6 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
-    const matrix = getMatrix();
-    window.sendToFlutter({type: 'matrix', payload: matrix});
-    return () => {
-      window.removeEventListener("wheel", handleWheel);
-    };
   }, []);
 
   useEffect(() => {
@@ -299,7 +308,7 @@ export const BurningShipThreeMesh: React.FC<Props> = (props) => {
 
     if ((mouseDown0.current && isQPressed.current) ||
     (mouseDown0.current && isAPressed.current)) {
-      if(zoom < 0.000045)
+      if(zoom < 0.00009)
         return;
 
       const zoomDelta = zoom - materialRef.current.uniforms.u_zoomSize.value;
